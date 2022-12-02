@@ -10,15 +10,7 @@ pub fn part_one(data: &str) -> usize {
         (("B", "X"), 1),
         (("C", "Y"), 2),
     ]);
-    let mut score = 0;
-    for line in data.lines() {
-        let game = line.splitn(2, ' ').collect::<Vec<&str>>();
-        score += match encoding.get(&(game[0], game[1])) {
-            Some(score) => *score,
-            _ => scores.get(game[1]).unwrap() + 3,
-        }
-    }
-    score
+    compute(data, &encoding, &scores, 1)
 }
 
 pub fn part_two(data: &str) -> usize {
@@ -31,12 +23,21 @@ pub fn part_two(data: &str) -> usize {
         (("B", "X"), 1),
         (("C", "X"), 2),
     ]);
+    compute(data, &encoding, &scores, 0)
+}
+
+fn compute(
+    data: &str,
+    encoding: &HashMap<(&str, &str), usize>,
+    scores: &HashMap<&str, usize>,
+    index: usize,
+) -> usize {
     let mut score = 0;
     for line in data.lines() {
         let game = line.splitn(2, ' ').collect::<Vec<&str>>();
         score += match encoding.get(&(game[0], game[1])) {
             Some(score) => *score,
-            _ => scores.get(game[0]).unwrap() + 3,
+            _ => scores.get(game[index]).unwrap() + 3,
         }
     }
     score
