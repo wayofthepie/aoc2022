@@ -30,14 +30,14 @@ fn compute(
     data: &str,
     encoding: &HashMap<(&str, &str), usize>,
     scores: &HashMap<&str, usize>,
-    index: usize,
+    game_index: usize,
 ) -> usize {
     let mut score = 0;
     for line in data.lines() {
         let game = line.splitn(2, ' ').collect::<Vec<&str>>();
         score += match encoding.get(&(game[0], game[1])) {
             Some(score) => *score,
-            _ => scores.get(game[index]).unwrap() + 3,
+            _ => scores.get(game[game_index]).unwrap() + 3,
         }
     }
     score
