@@ -1,18 +1,23 @@
 use std::collections::HashMap;
 
+const ROOT: &str = "|";
+
 pub fn part_one(data: &str) -> isize {
     let dirs = parse_to_dirs(data);
     let sizes = get_path_sizes(&dirs);
+    let space_marker = 100000;
     sizes
         .iter()
-        .filter_map(|(_, &v)| (v <= 100000).then_some(v))
+        .filter_map(|(_, &v)| (v <= space_marker).then_some(v))
         .sum::<isize>()
 }
 
 pub fn part_two(data: &str) -> isize {
+    let disk_space: isize = 70000000;
+    let needed_space: isize = 30000000;
     let dirs = parse_to_dirs(data);
     let sizes = get_path_sizes(&dirs);
-    let required = 30000000 - (70000000 - sizes.get("|").unwrap());
+    let required = needed_space - (disk_space - sizes.get(ROOT).unwrap());
     sizes
         .iter()
         .reduce(|(prev_path, prev), (current_path, current)| {
@@ -28,11 +33,11 @@ pub fn part_two(data: &str) -> isize {
 
 fn parse_to_dirs(data: &str) -> HashMap<String, isize> {
     let mut dirs = HashMap::<String, isize>::new();
-    let mut current_dir = vec!["|"];
+    let mut current_dir = vec![ROOT];
     for line in data.lines() {
         match line.split_whitespace().collect::<Vec<&str>>()[..] {
             ["$", "cd", "/"] => {
-                dirs.entry("|".to_owned()).or_insert(0);
+                dirs.entry(ROOT.to_owned()).or_insert(0);
             }
             ["$", "cd", ".."] => {
                 current_dir.pop();
