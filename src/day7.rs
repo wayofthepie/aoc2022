@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-const ROOT: &str = "|";
-const SEPARATOR: &str = "/";
+const ROOT: &str = "/";
+const SEPARATOR: &str = "|";
 
 pub fn part_one(data: &str) -> isize {
     let dirs = parse_to_dirs(data);
