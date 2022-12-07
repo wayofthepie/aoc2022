@@ -20,14 +20,15 @@ pub fn part_two(data: &str) -> isize {
     let required = needed_space - (disk_space - sizes.get(ROOT).unwrap());
     sizes
         .iter()
-        .reduce(|(prev_path, prev), (current_path, current)| {
+        .map(|(_, v)| v)
+        .reduce(|prev, current| {
             if (current - required).abs() < (prev - required).abs() {
-                (current_path, current)
+                current
             } else {
-                (prev_path, prev)
+                prev
             }
         })
-        .map(|(_, &size)| size)
+        .copied()
         .unwrap_or(0)
 }
 
