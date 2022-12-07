@@ -5,8 +5,7 @@ pub fn part_one(data: &str) -> isize {
     let sizes = get_path_sizes(&dirs);
     sizes
         .iter()
-        .filter(|(_, &v)| v <= 100000)
-        .map(|(_, v)| v)
+        .filter_map(|(_, &v)| (v <= 100000).then_some(v))
         .sum::<isize>()
 }
 
