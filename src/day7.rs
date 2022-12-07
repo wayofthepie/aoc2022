@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 const ROOT: &str = "|";
+const SEPARATOR: &str = "/";
 
 pub fn part_one(data: &str) -> isize {
     let dirs = parse_to_dirs(data);
@@ -45,11 +46,11 @@ fn parse_to_dirs(data: &str) -> HashMap<String, isize> {
             }
             ["$", "cd", dir] => {
                 current_dir.push(dir);
-                dirs.entry(current_dir.join("/")).or_insert(0);
+                dirs.entry(current_dir.join(SEPARATOR)).or_insert(0);
             }
             ["$", "ls"] | ["dir", _] => {}
             [size, _] => {
-                let current_size = dirs.entry(current_dir.join("/")).or_insert(0);
+                let current_size = dirs.entry(current_dir.join(SEPARATOR)).or_insert(0);
                 *current_size += size.parse::<isize>().unwrap();
             }
             _ => {}
@@ -61,9 +62,9 @@ fn parse_to_dirs(data: &str) -> HashMap<String, isize> {
 fn get_path_sizes(dirs: &HashMap<String, isize>) -> HashMap<String, isize> {
     let mut sizes = HashMap::<String, isize>::new();
     for (path, size) in dirs {
-        let mut paths = path.split('/').collect::<Vec<&str>>();
+        let mut paths = path.split(SEPARATOR).collect::<Vec<&str>>();
         while !paths.is_empty() {
-            *(sizes.entry(paths.join("/")).or_insert(0)) += size;
+            *(sizes.entry(paths.join(SEPARATOR)).or_insert(0)) += size;
             paths.pop();
         }
     }
