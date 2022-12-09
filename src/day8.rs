@@ -16,7 +16,6 @@ pub fn part_one(data: &str) -> usize {
         &(0..rows).rev().collect::<Vec<usize>>(),
         &(0..columns).rev().collect::<Vec<usize>>(),
     );
-    println!("{state:?}");
     state.iter().flatten().filter(|&&b| b).count()
 }
 
@@ -48,12 +47,10 @@ fn find_top_and_left(
                 continue;
             }
             if column > max {
-                println!("left (max {max}) {rix},{cix} {column}");
                 state[rix][cix] = true;
                 max = column;
             }
             if column > above[cix] {
-                println!("above (above {above:?}) {rix},{cix} {column}");
                 state[rix][cix] = true;
                 above[cix] = column;
             }
