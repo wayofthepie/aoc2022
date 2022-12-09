@@ -3,26 +3,21 @@ pub fn part_one(data: &str) -> usize {
     let rows = data.len();
     let columns = data[0].len();
 
-    let count = (rows * 2) + ((columns * 2) - 4);
     let mut state = vec![vec![false; columns]; rows];
     find_top_and_left(
         &data,
         &mut state,
-        &(1..rows - 1).collect::<Vec<usize>>(),
-        &(1..columns - 1).collect::<Vec<usize>>(),
-        data[0].clone(),
-        0,
+        &(0..rows).collect::<Vec<usize>>(),
+        &(0..columns).collect::<Vec<usize>>(),
     );
     find_top_and_left(
         &data,
         &mut state,
-        &(1..rows - 1).rev().collect::<Vec<usize>>(),
-        &(1..columns - 1).rev().collect::<Vec<usize>>(),
-        data[rows - 1].clone(),
-        rows - 1,
+        &(0..rows).rev().collect::<Vec<usize>>(),
+        &(0..columns).rev().collect::<Vec<usize>>(),
     );
     println!("{state:?}");
-    count + state.iter().flatten().filter(|&&b| b).count()
+    state.iter().flatten().filter(|&&b| b).count()
 }
 
 fn build_data(data: &str) -> Vec<Vec<usize>> {
@@ -41,14 +36,17 @@ fn find_top_and_left(
     state: &mut [Vec<bool>],
     rows_range: &[usize],
     columns: &[usize],
-    mut above: Vec<usize>,
-    row_start: usize,
 ) {
+    let mut above = data[rows_range[0]].clone();
     for &rix in rows_range {
         let row = data.get(rix).unwrap();
-        let mut max = row[row_start];
+        let mut max = row[columns[0]];
         for &cix in columns {
             let column = row[cix];
+            if rix == 0 || cix == 0 || rix == data.len() - 1 || cix == row.len() - 1 {
+                state[rix][cix] = true;
+                continue;
+            }
             if column > max {
                 println!("left (max {max}) {rix},{cix} {column}");
                 state[rix][cix] = true;
@@ -77,7 +75,7 @@ mod test {
             .trim();
         let result = part_one(data);
         println!("{}", data);
-        assert_eq!(result, 20);
+        assert_eq!(result, 21);
     }
 
     #[test]
