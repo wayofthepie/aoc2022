@@ -115,13 +115,10 @@ pub fn execute(grid: &Grid, search: Vec<Point>) -> usize {
         let mut discovered = HashSet::<Point>::new();
         let mut parents = HashMap::<Point, Point>::new();
         let mut queue = VecDeque::new();
-        let mut distances = VecDeque::new();
         queue.push_front(start);
-        distances.push_front(0);
         discovered.insert(start);
         while !queue.is_empty() {
             let point = queue.pop_back().unwrap();
-            let distance = distances.pop_back().unwrap();
             if grid.nodes[point.x][point.y] == 'E' {
                 if let Some(mut parent) = parents.get(&point) {
                     let mut count = 1;
@@ -137,7 +134,6 @@ pub fn execute(grid: &Grid, search: Vec<Point>) -> usize {
                 if !discovered.contains(&neighbour) {
                     discovered.insert(neighbour);
                     queue.push_front(neighbour);
-                    distances.push_front(distance + 1);
                     parents.insert(neighbour, point);
                 }
             }
