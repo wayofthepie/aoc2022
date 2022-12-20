@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 pub fn part_one(data: &str) -> usize {
     let data = build_data(data);
     let rows = data.len();
@@ -19,31 +21,109 @@ pub fn part_one(data: &str) -> usize {
     state.iter().flatten().filter(|&&b| b).count()
 }
 
-pub fn part_two(data: &str) -> usize {
-    let data = build_data(data);
-    let rows = data.len();
-    let columns = data[0].len();
+struct World {
+    grid: Vec<usize>,
+    width: usize,
+    height: usize,
+}
 
-    let mut state = vec![vec![false; columns]; rows];
-    find_top_and_left(
-        &data,
-        &mut state,
-        &(0..rows).collect::<Vec<usize>>(),
-        &(0..columns).collect::<Vec<usize>>(),
-    );
-    find_top_and_left(
-        &data,
-        &mut state,
-        &(0..rows).rev().collect::<Vec<usize>>(),
-        &(0..columns).rev().collect::<Vec<usize>>(),
-    );
-    let mut max = 0;
-    for rix in 0..state.len() {
-        for cix in 0..state[0].len() {
-            max_cross(&state, rix, cix);
+impl World {
+    fn new(width: usize, grid: Vec<usize>) -> Self {
+        let height = grid.len() / width;
+        Self {
+            grid,
+            width,
+            height,
         }
     }
-    count
+
+    fn get(&self, (x, y): (usize, usize)) -> Option<usize> {
+        let index = x * self.width + y;
+        self.grid.get(index).copied()
+    }
+
+    fn visibility_up(&self, position @ (x, _): (usize, usize)) -> usize {
+        visibility_x(self, position, x + 1..self.height)
+    }
+
+    fn visibility_down(&self, position @ (x, _): (usize, usize)) -> usize {
+        visibility_x(self, position, (0..x).rev())
+    }
+
+    fn visibility_left(&self, position @ (_, y): (usize, usize)) -> usize {
+        visibility_y(self, position, (0..y).rev())
+    }
+
+    fn visibility_right(&self, position @ (_, y): (usize, usize)) -> usize {
+        visibility_y(self, position, y + 1..self.width)
+    }
+}
+
+fn visibility_x(world: &World, from: (usize, usize), iter: impl Iterator<Item = usize>) -> usize {
+    let y = from.1;
+    let value = world.get(from);
+    let mut visibility = 0;
+    for x in iter {
+        let other = world.get((x, y));
+        match value.cmp(&other) {
+            Ordering::Greater => visibility += 1,
+            Ordering::Equal | Ordering::Less => {
+                visibility += 1;
+                break;
+            }
+        }
+    }
+    visibility
+}
+
+fn visibility_y(world: &World, from: (usize, usize), iter: impl Iterator<Item = usize>) -> usize {
+    let x = from.0;
+    let value = world.get(from);
+    let mut visibility = 0;
+    for y in iter {
+        let other = world.get((x, y));
+        match value.cmp(&other) {
+            Ordering::Greater => visibility += 1,
+            Ordering::Equal | Ordering::Less => {
+                visibility += 1;
+                break;
+            }
+        }
+    }
+    visibility
+}
+
+pub fn part_two(data: &str) -> usize {
+    let mut max = 0;
+    let (width, data) = build_data_two(data);
+    let world = World::new(width, data);
+    for x in 0..world.height {
+        for y in 0..width {
+            let tree = (x, y);
+            let visibility = world.visibility_up(tree)
+                * world.visibility_down(tree)
+                * world.visibility_left(tree)
+                * world.visibility_right(tree);
+            max = usize::max(max, visibility);
+        }
+    }
+    max
+}
+
+fn build_data_two(data: &str) -> (usize, Vec<usize>) {
+    let mut width = 0;
+    let nums = data
+        .lines()
+        .flat_map(|line| {
+            width = line.len();
+            line.chars()
+                .into_iter()
+                .map(|ch| ch.to_digit(10).unwrap() as usize)
+                .rev()
+        })
+        .rev()
+        .collect();
+    (width, nums)
 }
 
 fn build_data(data: &str) -> Vec<Vec<usize>> {
@@ -85,37 +165,10 @@ fn find_top_and_left(
     }
 }
 
-fn max_cross(state: &[Vec<bool>], row_start: usize, column_index: usize) -> usize {
-    /// all wrong......!!!!!!
-    let mut right = state[row_start][column_index..]
-        .iter()
-        .take_while(|&&b| b)
-        .count();
-    let mut down = 0;
-    (row_start..state.len()).for_each(|rix| {
-        if state[rix][column_index] {
-            down += 1
-        }
-    });
-    // opposite
-    let left = state[row_start][column_index..]
-        .iter()
-        .rev()
-        .filter(|&&b| b)
-        .count();
-    let mut up = 0;
-    (0..=row_start).rev().for_each(|rix| {
-        if state[rix][column_index] {
-            up += 1
-        }
-    });
-    right * down * left * up
-}
-
 #[cfg(test)]
 mod test {
-
     use super::{part_one, part_two};
+    use crate::day8::{build_data_two, World};
 
     #[test]
     fn test_example_part_one() {
@@ -127,7 +180,6 @@ mod test {
 35390"#
             .trim();
         let result = part_one(data);
-        println!("{}", data);
         assert_eq!(result, 21);
     }
 
@@ -139,9 +191,82 @@ mod test {
     }
 
     #[test]
+    fn test_example_part_two() {
+        let data = r#"
+30373
+25512
+65332
+33549
+35390"#
+            .trim();
+        let result = part_two(data);
+        assert_eq!(result, 8);
+    }
+
+    #[test]
     fn test_part_two() {
         let data = include_str!("../resources/day8part1").trim();
         let result = part_two(data);
-        assert_eq!(result, 1695);
+        assert_eq!(result, 287040);
+    }
+
+    #[test]
+    fn world_should_have_correct_visibility_up() {
+        let data = r#"
+30373
+25512
+65332
+33549
+35390"#
+            .trim();
+        let (width, data) = build_data_two(data);
+        let world = World::new(width, data);
+        let result = world.visibility_up((1, 2));
+        assert_eq!(result, 2);
+    }
+
+    #[test]
+    fn world_should_have_correct_visibility_left() {
+        let data = r#"
+30373
+25512
+65332
+33549
+35390"#
+            .trim();
+        let (width, data) = build_data_two(data);
+        let world = World::new(width, data);
+        let result = world.visibility_left((1, 2));
+        assert_eq!(result, 2);
+    }
+
+    #[test]
+    fn world_should_have_correct_visibility_right() {
+        let data = r#"
+30373
+25512
+65332
+33549
+35390"#
+            .trim();
+        let (width, data) = build_data_two(data);
+        let world = World::new(width, data);
+        let result = world.visibility_right((1, 2));
+        assert_eq!(result, 2);
+    }
+
+    #[test]
+    fn world_should_have_correct_visibility_down() {
+        let data = r#"
+30373
+25512
+65332
+33549
+35390"#
+            .trim();
+        let (width, data) = build_data_two(data);
+        let world = World::new(width, data);
+        let result = world.visibility_down((1, 2));
+        assert_eq!(result, 1);
     }
 }
