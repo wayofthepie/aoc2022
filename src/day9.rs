@@ -7,24 +7,6 @@ enum Move {
     Right(usize),
 }
 
-pub fn execute(rope: &mut Rope, data: &str) -> usize {
-    let mut moves = Vec::new();
-    let mut visits: HashSet<Point> = HashSet::new();
-    for line in data.lines() {
-        match &line.split_whitespace().collect::<Vec<&str>>()[..] {
-            ["U", num] => moves.push(Move::Up(num.parse::<usize>().unwrap())),
-            ["D", num] => moves.push(Move::Down(num.parse::<usize>().unwrap())),
-            ["L", num] => moves.push(Move::Left(num.parse::<usize>().unwrap())),
-            ["R", num] => moves.push(Move::Right(num.parse::<usize>().unwrap())),
-            _ => unreachable!(),
-        }
-    }
-    for mv in moves {
-        visits = visits.union(&rope.mv(mv)).copied().collect();
-    }
-    visits.len()
-}
-
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 struct Point {
     x: isize,
@@ -48,96 +30,70 @@ impl Rope {
         Self { head, tail }
     }
 
-    fn mv(&mut self, mv: Move) -> HashSet<Point> {
+    fn mv(&mut self, mv: Move, visits: &mut HashSet<Point>) {
         match mv {
-            Move::Up(moves) => self.move_up(moves),
-            Move::Down(moves) => self.move_down(moves),
-            Move::Left(moves) => self.move_left(moves),
-            Move::Right(moves) => self.move_right(moves),
+            Move::Up(moves) => self.move_x(moves, 1, visits),
+            Move::Down(moves) => self.move_x(moves, -1, visits),
+            Move::Left(moves) => self.move_y(moves, -1, visits),
+            Move::Right(moves) => self.move_y(moves, 1, visits),
         }
     }
 
-    fn move_up(&mut self, moves: usize) -> HashSet<Point> {
-        let mut tail_moves = HashSet::new();
+    fn move_x(&mut self, moves: usize, distance: isize, visits: &mut HashSet<Point>) {
         for _ in 0..moves {
-            self.head.x += 1;
+            self.head.x += distance;
             let diff_x = self.head.x.abs_diff(self.tail.x);
             let diff_y = self.head.y.abs_diff(self.tail.y);
             match (diff_x, diff_y) {
                 (2, 0) => {
-                    self.tail.x += 1;
+                    self.tail.x += distance;
                 }
                 (2, y) if y == 1 || y == 2 => {
-                    self.tail.x += 1;
+                    self.tail.x += distance;
                     self.tail.y = self.head.y;
                 }
                 _ => {}
             }
-            tail_moves.insert(self.tail);
+            visits.insert(self.tail);
         }
-        tail_moves
     }
 
-    fn move_down(&mut self, moves: usize) -> HashSet<Point> {
-        let mut tail_moves = HashSet::new();
+    fn move_y(&mut self, moves: usize, distance: isize, visits: &mut HashSet<Point>) {
         for _ in 0..moves {
-            self.head.x -= 1;
-            let diff_x = self.head.x.abs_diff(self.tail.x);
-            let diff_y = self.head.y.abs_diff(self.tail.y);
-            match (diff_x, diff_y) {
-                (2, 0) => {
-                    self.tail.x -= 1;
-                }
-                (2, y) if y == 1 || y == 2 => {
-                    self.tail.x -= 1;
-                    self.tail.y = self.head.y;
-                }
-                _ => {}
-            }
-            tail_moves.insert(self.tail);
-        }
-        tail_moves
-    }
-
-    fn move_left(&mut self, moves: usize) -> HashSet<Point> {
-        let mut tail_moves = HashSet::new();
-        for _ in 0..moves {
-            self.head.y -= 1;
+            self.head.y += distance;
             let diff_x = self.head.x.abs_diff(self.tail.x);
             let diff_y = self.head.y.abs_diff(self.tail.y);
             match (diff_y, diff_x) {
                 (2, 0) => {
-                    self.tail.y -= 1;
+                    self.tail.y += distance;
                 }
                 (2, x) if x == 1 || x == 2 => {
-                    self.tail.y -= 1;
+                    self.tail.y += distance;
                     self.tail.x = self.head.x;
                 }
                 _ => {}
             }
-            tail_moves.insert(self.tail);
+            visits.insert(self.tail);
         }
-        tail_moves
     }
+}
 
-    fn move_right(&mut self, moves: usize) -> HashSet<Point> {
-        let mut tail_moves = HashSet::new();
-        for _ in 0..moves {
-            self.head.y += 1;
-            let diff_x = self.head.x.abs_diff(self.tail.x);
-            let diff_y = self.head.y.abs_diff(self.tail.y);
-            match (diff_y, diff_x) {
-                (2, 0) => self.tail.y += 1,
-                (2, x) if x == 1 || x == 2 => {
-                    self.tail.y += 1;
-                    self.tail.x = self.head.x;
-                }
-                _ => {}
-            }
-            tail_moves.insert(self.tail);
+pub fn execute(rope: &mut Rope, data: &str) -> usize {
+    let mut moves = Vec::new();
+    let mut visits: HashSet<Point> = HashSet::new();
+    for line in data.lines() {
+        match &line.split_whitespace().collect::<Vec<&str>>()[..] {
+            ["U", num] => moves.push(Move::Up(num.parse::<usize>().unwrap())),
+            ["D", num] => moves.push(Move::Down(num.parse::<usize>().unwrap())),
+            ["L", num] => moves.push(Move::Left(num.parse::<usize>().unwrap())),
+            ["R", num] => moves.push(Move::Right(num.parse::<usize>().unwrap())),
+            _ => unreachable!(),
         }
-        tail_moves
     }
+    for mv in moves {
+        rope.mv(mv, &mut visits);
+    }
+    visits.len()
 }
 
 #[cfg(test)]
@@ -230,6 +186,6 @@ R 2"#;
         let moves = include_str!("../resources/day9part1");
         let mut rope = Rope::new(Point::new(0, 0), Point::new(0, 0));
         let result = execute(&mut rope, moves);
-        assert_eq!(result, 13);
+        assert_eq!(result, 5878);
     }
 }
